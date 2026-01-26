@@ -56,12 +56,12 @@ This is a Python simulator for level based foraging. It is based on OpenAI's RL 
 
 Install using pip
 ```sh
-pip install lbforaging
+pip install dmlbforaging
 ```
 Or to ensure that you have the latest version:
 ```sh
 git clone https://github.com/sssink/dmlb-foraging.git
-cd lbforaging
+cd dmlb-foraging
 pip install -e .
 ```
 

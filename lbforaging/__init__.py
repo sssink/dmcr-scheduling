@@ -9,11 +9,12 @@ foods = range(1, 10)
 max_food_level = [None]  # [None, 1]
 coop = [True, False]
 partial_obs = [True, False]
+partial_obs_size = range(2, 8)
 pens = [True, False]  # [True, False]
-level_dim = [2]
+level_dim = [2, 3]
 
-for s, p, f, mfl, c, po, pen, dim in product(
-    sizes, players, foods, max_food_level, coop, partial_obs, pens, level_dim
+for s, p, f, mfl, c, po, pos, pen, dim in product(
+    sizes, players, foods, max_food_level, coop, partial_obs, partial_obs_size, pens, level_dim
 ):
     register(
         id="Foraging{4}-{0}x{0}-{1}p-{2}f-{7}d{3}{5}{6}-v3".format(
@@ -21,7 +22,7 @@ for s, p, f, mfl, c, po, pen, dim in product(
             p,
             f,
             "-coop" if c else "",
-            "-2s" if po else "",
+            f"-{pos}s" if po else "",
             "-ind" if mfl else "",
             "-pen" if pen else "",
             dim,
@@ -35,7 +36,7 @@ for s, p, f, mfl, c, po, pen, dim in product(
             "min_food_level": [1,1],
             "max_food_level": mfl,
             "max_num_food": f,
-            "sight": 2 if po else s,
+            "sight": pos if po else s,
             "max_episode_steps": 50,
             "force_coop": c,
             "grid_observation": False,
