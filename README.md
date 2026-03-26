@@ -1,5 +1,5 @@
 <p align="center">
- <img width="350px" src="docs/img/logo.png" align="center" alt="Dynamic Multi-dimensional Capability Resource Scheduling (DMCRS)" />
+ <img width="350px" src="docs/img/logo_dmcrs.png" align="center" alt="Dynamic Multi-dimensional Capability Resource Scheduling (DMCRS)" />
  <p align="center">A multi-agent reinforcement learning environment for dynamic resource scheduling</p>
 </p>
 
