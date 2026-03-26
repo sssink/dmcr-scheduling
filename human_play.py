@@ -1,16 +1,16 @@
 # Based on: https://github.com/proroklab/VectorizedMultiAgentSimulator/blob/main/vmas/interactive_rendering.py
 """
-Use this script to interactively play LBF
+Use this script to interactively play DMCRS
 
 You can control the interaction with the following keys:
-- Arrow keys: move the current agent
-- L: load food
-- K: load food and keep the agent loading
+- Arrow keys: move the current resource
+- L: load task
+- K: load task and keep the resource loading
 - SPACE: do nothing
-- TAB: change the current agent
+- TAB: change the current resource
 - R: reset the environment
 - H: show help
-- D: display agent info (per step)
+- D: display resource info (per step)
 - ESC: exit
 """
 from argparse import ArgumentParser
@@ -19,7 +19,7 @@ import warnings
 import numpy as np
 import gymnasium as gym
 
-from lbforaging.foraging.environment import Action
+from dmcrs.scheduling.environment import Action
 
 
 def parse_args():
@@ -27,7 +27,7 @@ def parse_args():
     parser.add_argument(
         "--env",
         type=str,
-        default="Foraging-8x8-3p-2f-2d-v3",
+        default="dmcrs-8x8-3r-2t-2d-v3",
         help="Environment to use",
     )
     parser.add_argument(
@@ -39,13 +39,13 @@ def parse_args():
     parser.add_argument(
         "--display_info",
         action="store_true",
-        help="Display agent info per step",
+        help="Display resource info per step",
     )
     return parser.parse_args()
 
 
-class InteractiveLBFEnv:
-    """Use this script to interactively play LBF"""
+class InteractiveDMCRSEnv:
+    """Use this script to interactively play DMCRS"""
 
     def __init__(
         self,
@@ -76,21 +76,21 @@ class InteractiveLBFEnv:
         self._cycle()
 
     def _help(self):
-        print("Use the arrow keys to move the current agent")
-        print("Use the L key to load food")
-        print("Use the K key to load food and keep the agent loading")
+        print("Use the arrow keys to move the current resource")
+        print("Use the L key to load task")
+        print("Use the K key to load task and keep the resource loading")
         print("Use the SPACE key to do nothing")
-        print("Press TAB to change the current agent")
+        print("Press TAB to change the current resource")
         print("Press R to reset the environment")
         print("Press H to show help")
-        print("Press D to display agent info")
+        print("Press D to display resource info")
         print("Press ESC to exit")
         print()
 
     def _get_current_agent_info(self):
-        agent_level = self.env.unwrapped.players[self.current_agent_index].level
-        x, y = self.env.unwrapped.players[self.current_agent_index].position
-        return f"Agent {self.current_agent_index + 1} (Level {agent_level}, at row {x + 1}, col {y + 1})"
+        agent_level = self.env.unwrapped.resources[self.current_agent_index].level
+        x, y = self.env.unwrapped.resources[self.current_agent_index].position
+        return f"Resource {self.current_agent_index + 1} (Level {agent_level}, at row {x + 1}, col {y + 1})"
 
     def _display_info(self, obss, rews, done):
         print(f"Step {self.t}:")
@@ -189,4 +189,4 @@ class InteractiveLBFEnv:
 
 if __name__ == "__main__":
     args = parse_args()
-    InteractiveLBFEnv(env=args.env, display_info=args.display_info, max_steps=args.max_steps)
+    InteractiveDMCRSEnv(env=args.env, display_info=args.display_info, max_steps=args.max_steps)

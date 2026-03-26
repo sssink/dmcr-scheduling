@@ -1,0 +1,37 @@
+[build-system]
+requires = ["setuptools>=64", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "dmcrs"
+version = "1.0.0"
+description = "Dynamic Multi-dimensional Capability Resource Scheduling Environment"
+authors = [
+    {name = "sink", email = "sssssink@163.com"}
+]
+readme = "README.md"
+requires-python = ">=3.8"
+license = {text = "MIT"}
+classifiers = [
+    "Intended Audience :: Developers",
+    "Intended Audience :: Science/Research",
+    "Topic :: Scientific/Engineering :: Artificial Intelligence",
+    "Programming Language :: Python :: 3.8",
+    "Programming Language :: Python :: 3.9",
+    "Programming Language :: Python :: 3.10",
+    "Programming Language :: Python :: 3.11",
+    "License :: OSI Approved :: MIT License",
+]
+keywords = ["reinforcement-learning", "multi-agent", "resource-scheduling", "gymnasium", "environment"]
+dependencies = [
+    "numpy",
+    "gymnasium",
+    "pyglet<2",
+    "six",
+]
+
+[project.optional-dependencies]
+test = ["pytest"]
+
+[project.urls]
+Homepage = "https://github.com/sssink/dmlb-foraging"
