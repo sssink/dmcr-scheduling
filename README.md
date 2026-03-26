@@ -1,7 +1,6 @@
-
 <p align="center">
- <img width="350px" src="docs/img/logo.png" align="center" alt="Dynamic Multi-Level-based Foraging (DMLBF)" />
- <p align="center">A multi-agent reinforcement learning environment</p>
+ <img width="350px" src="docs/img/logo.png" align="center" alt="Dynamic Multi-dimensional Capability Resource Scheduling (DMCRS)" />
+ <p align="center">A multi-agent reinforcement learning environment for dynamic resource scheduling</p>
 </p>
 
 <!-- TABLE OF CONTENTS -->
@@ -20,32 +19,45 @@
 - [Contact](#contact)
 
 
-> [!CAUTION]
-> The LBF environment was updated to support the new [Gymnasium](https://gymnasium.farama.org/) interface in replacement of the deprecated `gym=0.21` dependency (many thanks @LukasSchaefer). For backwards compatibility, please see [Gymnasium compatibility documentation](https://gymnasium.farama.org/content/gym_compatibility/) or use version v1.1.1 of the repository. The main changes to the interface are as follows:
-> - `obss = env.reset()` --> `obss, info = env.reset()`
-> - `obss, rewards, dones, info = env.step(actions)` --> `obss, rewards, done, truncated, info = env.step(actions)`
-> - The `done` flag is now given as a single boolean value instead of a list of booleans.
-> - You can give the reset function a particular seed with `obss, info = env.reset(seed=42)` to initialise a particular episode.
 
 
 <!-- ABOUT THE PROJECT -->
 # About The Project
 
-This environment is a mixed cooperative-competitive game, which focuses on the coordination of the agents involved. Agents navigate a grid world and collect food by cooperating with other agents if needed.
+This environment is a mixed cooperative-competitive game that simulates a **dynamic resource scheduling scenario**. Resources navigate a grid world and handle tasks by cooperating with other resources if needed.
 
 <p align="center">
- <img width="450px" src="docs/img/lbf.gif" align="center" alt="Level Based Foraging (LBF) illustration" />
+ <img width="450px" src="docs/img/lbf.gif" align="center" alt="Dynamic Multi-dimensional Capability Resource Scheduling (DMCRS) illustration" />
 </p>
 
-More specifically, agents are placed in the grid world, and each is assigned a level vector (formerly a scalar level). Food is also randomly scattered, each having a level vector on its own. Agents can navigate the environment and can attempt to collect food placed next to them. The collection of food is successful only if the sum of the levels of the agents involved in loading meets or exceeds the food's level vector in each dimension. Finally, agents are awarded points based on the food's level vector and their contribution proportional to their level vector components. The figures below show two states of the game, one that requires cooperation, and one more competitive.
+## Core Concepts
 
-The environment now supports dynamic food spawning with visibility delays. When initializing the environment, each food item is assigned a random spawn time between these two values (inclusive). This feature adds a new dimension to the environment, requiring agents to plan their actions based on both current and future food availability.
+### Resources
+Resources are entities in the environment that can move and execute tasks. Each resource has a **multi-dimensional capability vector** (formerly a scalar level), representing its abilities across different dimensions. Resources can navigate the environment and attempt to execute tasks placed next to them.
 
-Additionally, the environment now supports dynamic changes to food levels over time, including linear decay, exponential decay, and random fluctuations. This feature introduces temporal dynamics to the environment, requiring agents to adapt their strategies based on the changing value of food resources.
+### Tasks
+Tasks are randomly scattered in the grid world, each having a **multi-dimensional requirement vector**. A task can be successfully executed only if the sum of the capability vectors of the resources involved meets or exceeds the task's requirement vector in **each dimension**. This creates a collaborative execution mechanism where resources must coordinate to complete tasks that exceed their individual capabilities.
 
-While it may appear simple, this is a very challenging environment, requiring the cooperation of multiple agents while being competitive at the same time. In addition, the discount factor also necessitates speed for the maximisation of rewards. Each agent is only awarded points if it participates in the collection of food, and it has to balance between collecting low-levelled food on his own or cooperating in acquiring higher rewards. In situations with three or more agents, highly strategic decisions can be required, involving agents needing to choose with whom to cooperate. Another significant difficulty for RL algorithms is the sparsity of rewards, which causes slower learning.
+### Dynamic Task Evolution
+The environment supports dynamic changes to task requirements over time, including:
+- **Linear Decay/Growth**: Task requirements decrease or increase linearly over time
+- **Exponential Decay/Growth**: Task requirements change exponentially over time
+- **Random Fluctuation**: Task requirements fluctuate randomly within a specified range
 
-This is a Python simulator for level based foraging. It is based on OpenAI's RL framework, with modifications for the multi-agent domain. The efficient implementation allows for thousands of simulation steps per second on a single thread, while the rendering capabilities allows humans to visualise agent actions. Our implementation can support different grid sizes or agent/food count. Also, game variants are implemented, such as cooperative mode (agents always need to cooperate) and shared reward (all agents always get the same reward), which is attractive as a credit assignment problem.
+This feature introduces temporal dynamics, requiring resources to adapt their strategies based on the changing nature of tasks.
+
+### Task Visibility
+Tasks have spawn times that determine when they become visible to resources. Tasks that have been spawned but not yet visible are not included in the resource's observations. This adds a planning dimension where resources must consider both current and future task availability.
+
+## Game Mechanics
+
+While it may appear simple, this is a very challenging environment, requiring the cooperation of multiple resources while being competitive at the same time. The discount factor necessitates speed for the maximization of rewards. Each resource is only awarded points if it participates in task execution, and it must balance between:
+- Executing low-requirement tasks independently
+- Cooperating to acquire higher rewards from complex tasks
+
+In situations with three or more resources, highly strategic decisions can be required, involving resources needing to choose with whom to cooperate. Another significant difficulty for RL algorithms is the sparsity of rewards, which causes slower learning.
+
+This is a Python simulator for dynamic resource scheduling. It is based on OpenAI's RL framework, with modifications for the multi-agent domain. The efficient implementation allows for thousands of simulation steps per second on a single thread, while the rendering capabilities allow humans to visualize resource actions. Our implementation can support different grid sizes or resource/task count. Also, game variants are implemented, such as cooperative mode (resources always need to cooperate) and shared reward (all resources always get the same reward), which is attractive as a credit assignment problem.
 
 
 
@@ -56,7 +68,7 @@ This is a Python simulator for level based foraging. It is based on OpenAI's RL 
 
 Install using pip
 ```sh
-pip install dmlbforaging
+pip install dmcrs
 ```
 Or to ensure that you have the latest version:
 ```sh
@@ -72,31 +84,34 @@ pip install -e .
 Create environments with the gym framework.
 First import
 ```python
-import lbforaging
+import dmcrs
 ```
 
 Then create an environment:
 ```python
-env = gym.make("Foraging-8x8-2p-1f-2d-v3")
+env = gym.make("dmcrs-8x8-2r-1t-2d-v3")
 ```
 
 We offer a variety of environments using this template:
 ```
-"Foraging-{GRID_SIZE}x{GRID_SIZE}-{PLAYER COUNT}p-{FOOD LOCATIONS}f-{DIMENSION}d{-coop IF COOPERATIVE MODE}-v0"
+"dmcrs{-{SIGHT_SIZE}s- IF PARTIAL OBS MODE}-{GRID_SIZE}x{GRID_SIZE}-{RESOURCE COUNT}r-{TASK COUNT}t-{DIMENSION}d{-coop IF COOPERATIVE MODE}-v0"
 ```
 
 But you can register your own variation using (change parameters as needed):
 ```python
-from gym.envs.registration register
+from gymnasium.envs.registration import register
 
 register(
-    id="Foraging-{0}x{0}-{1}p-{2}f-{3}d{4}-v3".format(s, p, f, d, "-coop" if c else ""),
-    entry_point="lbforaging.foraging:ForagingEnv",
+    id="dmcrs-{0}x{0}-{1}r-{2}t-{3}d{4}-v3".format(s, r, t, d, "-coop" if c else ""),
+    entry_point="dmcrs.foraging:ForagingEnv",
     kwargs={
-        "players": p,
-        "max_player_level": 3,
+        "resources": r,
+        "min_resource_level": [1] * d,
+        "max_resource_level": [2] * d,
         "field_size": (s, s),
-        "max_food": f,
+        "min_task_level": [1] * d,
+        "max_task_level": None,
+        "max_num_tasks": t,
         "sight": s,
         "max_episode_steps": 50,
         "force_coop": c,
@@ -110,7 +125,7 @@ Similarly to Gym, but adapted to multi-agent settings step() function is defined
 nobs, nreward, ndone, ninfo = env.step(actions)
 ```
 
-Where n-obs, n-rewards, n-done and n-info are LISTS of N items (where N is the number of agents). The i'th element of each list should be assigned to the i'th agent.
+Where n-obs, n-rewards, n-done and n-info are LISTS of N items (where N is the number of resources). The i'th element of each list should be assigned to the i'th resource.
 
 
 
@@ -118,15 +133,15 @@ Where n-obs, n-rewards, n-done and n-info are LISTS of N items (where N is the n
 
 The observation space consists of the following components:
 
-1. **Food Field**: A grid representation of the environment showing the position and level of food items that are visible to the agent. 
-2. **Agent Positions**: The positions of all agents in the environment. 
-3. **Agent Levels**: The level vectors of all agents (if `observe_agent_levels` is True).
+1. **Task Field**: A grid representation of the environment showing the position and level of tasks that are visible to the resource. 
+2. **Resource Positions**: The positions of all resources in the environment. 
+3. **Resource Levels**: The capability vectors of all resources (if `observe_agent_levels` is True).
 
-With the food spawn time modification, **only foods that have reached their spawn time (i.e., are visible) are included in the observation space**. Foods that have been spawned but not yet visible (translucent) are not included in the agent's observations.
+With the task spawn time modification, **only tasks that have reached their spawn time (i.e., are visible) are included in the observation space**. Tasks that have been spawned but not yet visible are not included in the resource's observations.
 
 ## Action space
 
-actions is a LIST of N INTEGERS (one of each agent) that should be executed in that step. The integers should correspond to the Enum below:
+actions is a LIST of N INTEGERS (one of each resource) that should be executed in that step. The integers should correspond to the Enum below:
 
 ```python
 class Action(Enum):
@@ -141,45 +156,51 @@ Valid actions can always be sampled like in a gym environment, using:
 ```python
 env.action_space.sample() # [2, 3, 0, 1]
 ```
-Also, ALL actions are valid. If an agent cannot move to a location or load, his action will be replaced with `NONE` automatically.
+Also, ALL actions are valid. If a resource cannot move to a location or load, its action will be replaced with `NONE` automatically.
 
 ## Rewards
 
-The rewards are calculated as follows. When one or more agents load a food, the food level vector is considered. The collection is successful only if the sum of the agents' level vectors meets or exceeds the food's level vector in each dimension. 
+The rewards are calculated as follows. When one or more resources execute a task, the task's requirement vector is considered. The execution is successful only if the sum of the resources' capability vectors meets or exceeds the task's requirement vector in each dimension. 
 
 For the rewards distribution:
-1. Each agent's contribution is determined by their level vector components relative to the sum of all participating agents' level vectors
-2. The reward for each agent is calculated based on this contribution proportion and the food's level vector
-3. If enabled, the reward is normalized so that the sum of rewards (if all foods have been picked-up) is one
+1. Each resource's contribution is determined by its capability vector components relative to the sum of all participating resources' capability vectors
+2. The reward for each resource is calculated based on this contribution proportion and the task's requirement vector
+3. If enabled, the reward is normalized so that the sum of rewards (if all tasks have been completed) is one
 
 If you prefer code:
 
 ```python
-for a in adj_players: # the players that participated in loading the food
-    a.reward = float(a.level * food) # higher-leveled agents contribute more and are rewarded more. 
+for a in adj_resources: # the resources that participated in executing the task
+    contribution = 0.0
+    for i in range(self.level_dim):
+        if adj_resource_level[i] > EPSILON:
+            contribution += float(a.level[i] / adj_resource_level[i])
+    contribution = contribution / self.level_dim
+    a.reward += task_base_value * contribution
     if self._normalize_reward:
-        a.reward = a.reward / float(
-            adj_player_level * self._food_spawned
-        )  # normalize reward so that the final sum of rewards is one.
+        a.reward = a.reward / max(self._task_base_value_spawned, EPSILON)
 ```
-## New Feature: Food Dynamic Level Changes
 
-The environment now supports dynamic changes to food levels over time. This feature can be enabled by setting `enable_food_dynamic_level=True` when creating the environment. Each food item is assigned a random decay type at spawn time, which determines how its level vector changes over time. The following decay types are supported:
+## Feature: Dynamic Task Level Changes
 
-1. **None (NONE)**: Food levels remain constant over time.
-2. **Linear Decay (LINEAR_DECAY)**: Food levels decrease linearly over time based on a decay rate.
-3. **Exponential Decay (EXPONENTIAL_DECAY)**: Food levels decrease exponentially over time based on a decay factor.
-4. **Random Fluctuation (RANDOM_FLUCTUATE)**: Food levels fluctuate randomly within a specified range.
+The environment supports dynamic changes to task requirements over time. This feature can be enabled by setting `enable_task_dynamic_level=True` when creating the environment. Each task is assigned a random dynamic type at spawn time, which determines how its requirement vector changes over time. The following dynamic types are supported:
 
-Key parameters for configuring food dynamic level changes:
+1. **None (NONE)**: Task requirements remain constant over time.
+2. **Linear Decay (LINEAR_DECAY)**: Task requirements decrease linearly over time based on a decay rate.
+3. **Linear Growth (LINEAR_GROWTH)**: Task requirements increase linearly over time based on a growth rate.
+4. **Exponential Decay (EXPONENTIAL_DECAY)**: Task requirements decrease exponentially over time based on a decay factor.
+5. **Exponential Growth (EXPONENTIAL_GROWTH)**: Task requirements increase exponentially over time based on a growth factor.
+6. **Random Fluctuation (RANDOM_FLUCTUATE)**: Task requirements fluctuate randomly within a specified range.
 
-- `food_decay_rates`: A list of two values specifying the minimum and maximum decay rates for linear decay.
-- `food_decay_factors`: A list of two values specifying the minimum and maximum decay factors for exponential decay.
-- `food_fluctuation_range`: A list of two values specifying the minimum and maximum fluctuations for random fluctuation.
+Key parameters for configuring task dynamic level changes:
 
-When a food's level in all dimensions drops below a small epsilon value (1e-6), it is removed from the environment.
+- `task_dynamic_rates`: A list of two values specifying the minimum and maximum rates for linear decay/growth.
+- `task_dynamic_factors`: A list of two values specifying the minimum and maximum factors for exponential decay/growth.
+- `task_fluctuation_range`: A list of two values specifying the minimum and maximum fluctuations for random fluctuation.
 
-This feature introduces temporal dynamics to the environment, requiring agents to make strategic decisions about when to collect food based on its changing value. For example, agents might need to prioritize collecting food that is decaying rapidly or wait for food that is fluctuating to reach a higher value.
+When a task's requirement in all dimensions drops below a small epsilon value (1e-6), it is removed from the environment.
+
+This feature introduces temporal dynamics to the environment, requiring resources to make strategic decisions about when to execute tasks based on their changing requirements. For example, resources might need to prioritize executing tasks that are decaying rapidly or wait for tasks that are fluctuating to reach a lower requirement.
 
 <!-- HUMAN PLAY SCRIPT -->
 # Human Play
@@ -188,20 +209,20 @@ We also provide a simple script that allows you to play the environment as a hum
 ```sh
 python human_play.py --env <env_name>
 ```
-where `<env_name>` is the name of the environment you want to play. For example, to play an LBF task with two agents and one food in a 8x8 grid, run:
+where `<env_name>` is the name of the environment you want to play. For example, to play a DMCRS task with two resources and one task in a 8x8 grid, run:
 ```sh
-python human_play.py --env Foraging-8x8-2p-1f-2d-v3
+python human_play.py --env dmcrs-8x8-2r-1t-2d-v3
 ```
 
-Within the script, you can control a single agent at the time using the following keys:
-- Arrow keys: move current agent up/ down/ left/ right
-- L: load food
-- K: load food and let agent keep loading (even if agent is swapped)
+Within the script, you can control a single resource at a time using the following keys:
+- Arrow keys: move current resource up/ down/ left/ right
+- L: execute task
+- K: execute task and let resource keep loading (even if resource is swapped)
 - SPACE: do nothing
-- TAB: change the current agent (rotates through all agents)
+- TAB: change the current resource (rotates through all resources)
 - R: reset the environment and start a new episode
 - H: show help
-- D: display agent info (at every time step)
+- D: display resource info (at every time step)
 - ESC: exit
 
 
@@ -216,7 +237,7 @@ Within the script, you can control a single agent at the time using the followin
   year={2020}
 }
 ```
-2. A comperative evaluation of cooperative MARL algorithms and includes an introduction to this environment:
+2. A comparative evaluation of cooperative MARL algorithms and includes an introduction to this environment:
 ```
 @inproceedings{papoudakis2021benchmarking,
    title={Benchmarking Multi-Agent Deep Reinforcement Learning Algorithms in Cooperative Tasks},
@@ -243,4 +264,3 @@ Within the script, you can control a single agent at the time using the followin
 sink - sssssink@163.com
 
 This project is a fork of the original lb-foraging project. The original project is available at [https://github.com/semitable/lb-foraging](https://github.com/semitable/lb-foraging).
-

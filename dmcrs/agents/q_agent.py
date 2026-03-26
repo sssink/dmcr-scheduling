@@ -4,9 +4,9 @@ from itertools import repeat, product
 import numpy as np
 import pandas as pd
 
-from lbforaging.agents import H1, BaseAgent
-from lbforaging.foraging.environment import ForagingEnv as Env
-from lbforaging.foraging.environment import Action
+from dmcrs.agents import H1, BaseAgent
+from dmcrs.scheduling.environment import SchedulingEnv as Env
+from dmcrs.scheduling.environment import Action
 
 
 _CACHE = None
@@ -110,31 +110,31 @@ class QAgent(BaseAgent):
         self.e_2 = 0.2  # expand stage
 
     def expand(self, obs, depth):
-        player_no = next((i for i, item in enumerate(obs.players) if item.is_self))
+        resource_no = next((i for i, item in enumerate(obs.resources) if item.is_self))
 
         env = Env.from_obs(obs)
 
-        observations = [env._make_obs(p) for p in env.players]
+        observations = [env._make_obs(p) for p in env.resources]
 
-        for i, player in enumerate(env.players):
-            if i == player_no:
-                continue  # we will control this player ourselves
+        for i, resource in enumerate(env.resources):
+            if i == resource_no:
+                continue  # we will control this resource ourselves
             else:
-                player.set_controller(H1(player))
+                resource.set_controller(H1(resource))
 
         for _ in range(depth):
             actions = []
 
-            for i, player in enumerate(env.players):
-                if i == player_no:
+            for i, resource in enumerate(env.resources):
+                if i == resource_no:
                     if random.random() > self.e_2:
                         action = self.Q.choose_action(
                             self._make_state(observations[i])
-                        )[player_no]
+                        )[resource_no]
                     else:
                         action = random.choice(observations[i].actions)
                 else:
-                    action = player.step(observations[i])
+                    action = resource.step(observations[i])
 
                 # make sure the action is valid (if not replace with random action):
                 action = (
@@ -144,16 +144,16 @@ class QAgent(BaseAgent):
                 )
                 actions.append(action)
 
-            prev_state = self._make_state(observations[player_no])
+            prev_state = self._make_state(observations[resource_no])
             joint_action = tuple(actions)
 
-            past_score = observations[player_no].players[player_no].score
+            past_score = observations[resource_no].resources[resource_no].score
 
             observations = env.step(actions)  # perform the joint action
 
-            reward = observations[player_no].players[player_no].score - past_score
+            reward = observations[resource_no].resources[resource_no].score - past_score
 
-            state = self._make_state(observations[player_no])
+            state = self._make_state(observations[resource_no])
 
             self.Q.learn(prev_state, joint_action, reward, state)
             # import time
@@ -170,7 +170,7 @@ class QAgent(BaseAgent):
     def step(self, obs):
         if self.Q is None:
             self.Q = QLearningTable(
-                actions=list(product(*repeat(Action, len(obs.players))))
+                actions=list(product(*repeat(Action, len(obs.resources))))
             )
 
         # observe current state s
@@ -178,7 +178,7 @@ class QAgent(BaseAgent):
 
         if self.history and self._prev_state:
             reward = self.score - self._prev_score
-            joint_action = tuple([p.history[-1] for p in obs.players])
+            joint_action = tuple([r.history[-1] for r in obs.resources])
             self.Q.learn(self._prev_state, joint_action, reward, state)
 
         if obs.game_over:

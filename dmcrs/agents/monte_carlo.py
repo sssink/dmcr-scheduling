@@ -8,8 +8,8 @@ import plotly.graph_objs as go
 import networkx as nx
 from networkx.drawing.nx_pydot import graphviz_layout
 
-from lbforaging.foraging.environment import ForagingEnv as Env
-from lbforaging.agents.agent import BaseAgent
+from dmcrs.scheduling.environment import SchedulingEnv as Env
+from dmcrs.agents.agent import BaseAgent
 
 
 MCTS_DEPTH = 15
@@ -80,7 +80,7 @@ def plot_graph(G):
         node_trace["y"].append(y)
 
         node_info = "Visits: +{0}<br>Rewards: {1}<br>Score: {2}".format(
-            node.visits, node.reward, node.state.players[0].score
+            node.visits, node.reward, node.state.resources[0].score
         )
 
         node_trace["text"].append(node_info)
@@ -162,7 +162,7 @@ class Node:
         ucb1 = lambda u: (
             u.reward / u.visits
             + c * math.sqrt(math.log(self.root.visits / u.visits))
-            + h * u.state.players[my_id].score / u.visits
+            + h * u.state.resources[my_id].score / u.visits
         )
         best = max(self.children, key=ucb1)
 
@@ -250,4 +250,4 @@ class MonteCarloAgent(BaseAgent):
 
         my_id = 0  # todo fix this
 
-        return new_state.players[my_id].score
+        return new_state.resources[my_id].score

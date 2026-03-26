@@ -6,9 +6,9 @@ import random
 
 import numpy as np
 
-from lbforaging.agents.q_agent import QAgent
-from lbforaging.agents.heuristic_agent import H1, H2, H3, H4
-from lbforaging.foraging.environment import ForagingEnv as Env
+from dmcrs.agents.q_agent import QAgent
+from dmcrs.agents.heuristic_agent import H1, H2, H3, H4
+from dmcrs.scheduling.environment import SchedulingEnv as Env
 
 
 class HBAAgent(QAgent):
@@ -33,7 +33,7 @@ class HBAAgent(QAgent):
         return f
 
     def choose_action(self, state, obs):
-        player_no = next((i for i, item in enumerate(obs.players) if item.is_self))
+        resource_no = next((i for i, item in enumerate(obs.resources) if item.is_self))
         self.Q.check_state_exist(state)
 
         env = Env.from_obs(obs)
@@ -41,8 +41,8 @@ class HBAAgent(QAgent):
 
         actions = []
         beliefs = []
-        for i, p in enumerate(obs.players):
-            if p.is_self:
+        for i, r in enumerate(obs.resources):
+            if r.is_self:
                 actions.append(obs.actions)
                 beliefs.append(np.ones(len(self.type_space)))
             else:
@@ -55,7 +55,7 @@ class HBAAgent(QAgent):
 
         for action, prob in zip(joint_actions, probs):
             v = self.Q.q_table.at[state, action] * reduce(operator.mul, prob)
-            exppay[action[player_no]] += v
+            exppay[action[resource_no]] += v
 
         return max(exppay.items(), key=operator.itemgetter(1))[0]
 
@@ -66,25 +66,25 @@ class HBAAgent(QAgent):
         self.prev_obs = obs
         return val
 
-    def generate_typespace_moves(self, env, exclude_player=None):
-        moves = np.empty((len(env.players), len(self.type_space)), dtype=object)
-        for i, player in enumerate(env.players):
-            # if i == exclude_player:  # todo this player can be excluded (because it's us)
+    def generate_typespace_moves(self, env, exclude_resource=None):
+        moves = np.empty((len(env.resources), len(self.type_space)), dtype=object)
+        for i, resource in enumerate(env.resources):
+            # if i == exclude_resource:  # todo this resource can be excluded (because it's us)
             #     continue
-            obs = env._make_obs(env.players[i])
+            obs = env._make_obs(env.resources[i])
             for j, t in enumerate(self.type_space):
-                agent = t(env.players[i])
+                agent = t(env.resources[i])
                 action = agent._step(obs)
                 moves[i, j] = action
         return moves
 
     def update_belief(self, obs):
-        player_no = next((i for i, item in enumerate(obs.players) if item.is_self))
+        resource_no = next((i for i, item in enumerate(obs.resources) if item.is_self))
 
         env = Env.from_obs(self.prev_obs)
-        moves = self.generate_typespace_moves(env, player_no)
+        moves = self.generate_typespace_moves(env, resource_no)
         truth = np.array(
-            [[p.history[-1] for p in obs.players]] * len(self.type_space)
+            [[r.history[-1] for r in obs.resources]] * len(self.type_space)
         ).T
 
         likelihood = np.equal(truth, moves).astype(float)
@@ -96,8 +96,8 @@ class HBAAgent(QAgent):
 
         gtw = self.gtw(10, 0.05, 3)
 
-        for i, p in enumerate(obs.players):
-            if i == player_no:
+        for i, r in enumerate(obs.resources):
+            if i == resource_no:
                 continue
             L = np.zeros(len(self.type_space))
             for t, l in enumerate(self.prev_likelihood):
@@ -107,32 +107,32 @@ class HBAAgent(QAgent):
             self.belief[i, :] = self.belief[i, :] / sum(self.belief[i, :])
 
     def expand(self, obs, depth):
-        player_no = next((i for i, item in enumerate(obs.players) if item.is_self))
+        resource_no = next((i for i, item in enumerate(obs.resources) if item.is_self))
 
         env = Env.from_obs(obs)
 
-        observations = [env._make_obs(p) for p in env.players]
+        observations = [env._make_obs(p) for p in env.resources]
 
-        for i, player in enumerate(env.players):
-            if i == player_no:
-                continue  # we will control this player ourselves
+        for i, resource in enumerate(env.resources):
+            if i == resource_no:
+                continue  # we will control this resource ourselves
             else:
                 likely_type = self.type_space[np.argmax(self.belief[i, :])]
-                player.set_controller(likely_type(player))
+                resource.set_controller(likely_type(resource))
 
         for _ in range(depth):
             actions = []
 
-            for i, player in enumerate(env.players):
-                if i == player_no:
+            for i, resource in enumerate(env.resources):
+                if i == resource_no:
                     if random.random() > self.e_2:
                         action = self.Q.choose_action(
                             self._make_state(observations[i])
-                        )[player_no]
+                        )[resource_no]
                     else:
                         action = random.choice(observations[i].actions)
                 else:
-                    action = player.step(observations[i])
+                    action = resource.step(observations[i])
 
                 # make sure the action is valid (if not replace with random action):
                 action = (
@@ -142,16 +142,16 @@ class HBAAgent(QAgent):
                 )
                 actions.append(action)
 
-            prev_state = self._make_state(observations[player_no])
+            prev_state = self._make_state(observations[resource_no])
             joint_action = tuple(actions)
 
-            past_score = observations[player_no].players[player_no].score
+            past_score = observations[resource_no].resources[resource_no].score
 
             observations = env.step(actions)  # perform the joint action
 
-            reward = observations[player_no].players[player_no].score - past_score
+            reward = observations[resource_no].resources[resource_no].score - past_score
 
-            state = self._make_state(observations[player_no])
+            state = self._make_state(observations[resource_no])
 
             self.Q.learn(prev_state, joint_action, reward, state)
             # import time

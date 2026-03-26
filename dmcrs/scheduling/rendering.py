@@ -135,7 +135,7 @@ class Viewer(object): # Visualization Renderer Class - responsible for creating 
 
         self._draw_grid()
         self._draw_tasks(env)
-        self._draw_players(env)
+        self._draw_resources(env)
 
         time_step_label = pyglet.text.Label(
             f"Step: {env.current_step}",
@@ -233,13 +233,13 @@ class Viewer(object): # Visualization Renderer Class - responsible for creating 
             self._draw_time_badge(row, col, spawn_time)
             self._draw_dynamicType_badge(row, col, task.dynamic_type)
 
-    def _draw_players(self, env):
-        players = []
+    def _draw_resources(self, env):
+        resources = []
         batch = pyglet.graphics.Batch()
 
-        for player in env.players:
-            row, col = player.position
-            players.append(
+        for resource in env.resources:
+            row, col = resource.position
+            resources.append(
                 pyglet.sprite.Sprite(
                     self.img_agent,
                     (self.grid_size + 1) * col,
@@ -247,12 +247,12 @@ class Viewer(object): # Visualization Renderer Class - responsible for creating 
                     batch=batch,
                 )
             )
-        for p in players:
-            p.update(scale=self.grid_size / p.width)
+        for r in resources:
+            r.update(scale=self.grid_size / r.width)
         batch.draw()
-        for p in env.players:
-            level_str = ",".join(map(str, np.round(p.level, 1)))
-            self._draw_level_badge(*p.position, level_str)
+        for r in env.resources:
+            level_str = ",".join(map(str, np.round(r.level, 1)))
+            self._draw_level_badge(*r.position, level_str)
 
     def _draw_level_badge(self, row, col, level): # draw level badge
         resolution = 4

@@ -2,15 +2,15 @@ import random
 
 import numpy as np
 
-from lbforaging.agents.agent import BaseAgent
-from lbforaging.foraging.environment import Action
+from dmcrs.agents.agent import BaseAgent
+from dmcrs.scheduling.environment import Action
 
 
 class HeuristicAgent(BaseAgent):
     name = "Heuristic Agent"
 
-    def _center_of_players(self, players):
-        coords = np.array([player.position for player in players])
+    def _center_of_resources(self, resources):
+        coords = np.array([resource.position for resource in resources])
         return np.rint(coords.mean(axis=0))
 
     def _move_towards(self, target, allowed):
@@ -57,16 +57,16 @@ class H1(HeuristicAgent):
 
 class H2(HeuristicAgent):
     """
-    H2 Agent goes to the one visible task which is closest to the centre of visible players
+    H2 Agent goes to the one visible task which is closest to the centre of visible resources
     """
 
     name = "H2"
 
     def step(self, obs):
-        players_center = self._center_of_players(obs.players)
+        resources_center = self._center_of_resources(obs.resources)
 
         try:
-            r, c = self._closest_task(obs, None, players_center)
+            r, c = self._closest_task(obs, None, resources_center)
         except TypeError:
             return random.choice(obs.actions)
         y, x = self.observed_position
@@ -105,18 +105,18 @@ class H3(HeuristicAgent):
 
 class H4(HeuristicAgent):
     """
-    H4 Agent goes to the one visible task which is closest to all visible players
+    H4 Agent goes to the one visible task which is closest to all visible resources
      such that the sum of their and H4's level is sufficient to load the task
     """
 
     name = "H4"
 
     def step(self, obs):
-        players_center = self._center_of_players(obs.players)
-        players_sum_level = sum([a.level for a in obs.players])
+        resources_center = self._center_of_resources(obs.resources)
+        resources_sum_level = sum([a.level for a in obs.resources])
 
         try:
-            r, c = self._closest_task(obs, players_sum_level, players_center)
+            r, c = self._closest_task(obs, resources_sum_level, resources_center)
         except TypeError:
             return random.choice(obs.actions)
         y, x = self.observed_position

@@ -1,6 +1,6 @@
 import random
 
-from lbforaging.agents import BaseAgent
+from dmcrs.agents import BaseAgent
 
 
 class RandomAgent(BaseAgent):

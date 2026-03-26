@@ -11,16 +11,16 @@ class BaseAgent:
     def __repr__(self):
         return self.name
 
-    def __init__(self, player):
+    def __init__(self, resource):
         self.logger = logging.getLogger(__name__)
-        self.player = player
+        self.resource = resource
 
     def __getattr__(self, item):
-        return getattr(self.player, item)
+        return getattr(self.resource, item)
 
     def _step(self, obs):
         self.observed_position = next(
-            (x for x in obs.players if x.is_self), None
+            (x for x in obs.resources if x.is_self), None
         ).position
 
         # saves the action to the history
@@ -56,7 +56,7 @@ class BaseAgent:
         for c in ["]", "[", " ", "\n"]:
             state = state.replace(c, "")
 
-        for a in obs.players:
+        for a in obs.resources:
             state = state + str(a.position[0]) + str(a.position[1]) + str(a.level)
 
         return int(state)
