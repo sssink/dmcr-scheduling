@@ -13,13 +13,13 @@ def manhattan_distance(x, y):
 
 @pytest.fixture
 def simple2p1f():
-    env = gym.make("Foraging-8x8-2p-1f-v3")
+    env = gym.make("Foraging-8x8-2p-1f-2d-v3")
     env.reset()
 
     env.unwrapped.field[:] = 0
 
     env.unwrapped.field[4, 4] = 2
-    env.unwrapped._food_spawned = env.field.sum()
+    env.unwrapped._task_spawned = env.field.sum()
 
     env.unwrapped.players[0].position = (4, 3)
     env.unwrapped.players[1].position = (4, 5)
@@ -33,13 +33,13 @@ def simple2p1f():
 
 @pytest.fixture
 def simple2p1f_sight1():
-    env = gym.make("Foraging-8x8-2p-1f-v3", sight=1)
+    env = gym.make("Foraging-8x8-2p-1f-2d-v3", sight=1)
     env.reset()
 
     env.unwrapped.field[:] = 0
 
     env.unwrapped.field[4, 4] = 2
-    env.unwrapped._food_spawned = env.field.sum()
+    env.unwrapped._task_spawned = env.field.sum()
 
     env.unwrapped.players[0].position = (4, 3)
     env.unwrapped.players[1].position = (4, 5)
@@ -52,13 +52,13 @@ def simple2p1f_sight1():
 
 @pytest.fixture
 def simple2p1f_sight2():
-    env = gym.make("Foraging-8x8-2p-1f-v3", sight=2)
+    env = gym.make("Foraging-8x8-2p-1f-2d-v3", sight=2)
     env.reset()
 
     env.unwrapped.field[:] = 0
 
     env.unwrapped.field[4, 4] = 2
-    env.unwrapped._food_spawned = env.field.sum()
+    env.unwrapped._task_spawned = env.field.sum()
 
     env.unwrapped.players[0].position = (4, 3)
     env.unwrapped.players[1].position = (4, 5)
@@ -71,10 +71,10 @@ def simple2p1f_sight2():
 
 def test_make():
     names = [
-        "Foraging-8x8-2p-1f-v3",
-        "Foraging-5x5-2p-1f-v3",
-        "Foraging-8x8-3p-1f-v3",
-        "Foraging-8x8-3p-1f-coop-v3",
+        "Foraging-8x8-2p-1f-2d-v3",
+        "Foraging-5x5-2p-1f-2d-v3",
+        "Foraging-8x8-3p-1f-2d-v3",
+        "Foraging-8x8-3p-1f-coop-2d-v3",
     ]
     for name in names:
         env = gym.make(name)
@@ -87,7 +87,7 @@ def test_spaces():
 
 
 def test_seed():
-    env = gym.make("Foraging-8x8-2p-2f-v3")
+    env = gym.make("Foraging-8x8-2p-2f-2d-v3")
     for seed in range(10):
         obs1 = []
         obs2 = []
@@ -104,40 +104,40 @@ def test_seed():
         assert np.array_equal(o1, o2)
 
 
-def test_food_spawning_0():
-    env = gym.make("Foraging-6x6-2p-2f-v3")
+def test_task_spawning_0():
+    env = gym.make("Foraging-6x6-2p-2f-2d-v3")
 
     for i in range(1000):
         env.reset()
 
-        foods = [np.array(f) for f in zip(*env.field.nonzero())]
-        # we should have 2 foods
-        assert len(foods) == 2
+        tasks = [np.array(f) for f in zip(*env.field.nonzero())]
+        # we should have 2 tasks
+        assert len(tasks) == 2
 
-        # foods must not be within 2 steps of each other
-        assert manhattan_distance(foods[0], foods[1]) > 2
+        # tasks must not be within 2 steps of each other
+        assert manhattan_distance(tasks[0], tasks[1]) > 2
 
-        # food cannot be placed in first or last col/row
-        assert foods[0][0] not in [0, 7]
-        assert foods[0][1] not in [0, 7]
-        assert foods[1][0] not in [0, 7]
-        assert foods[1][1] not in [0, 7]
+        # task cannot be placed in first or last col/row
+        assert tasks[0][0] not in [0, 7]
+        assert tasks[0][1] not in [0, 7]
+        assert tasks[1][0] not in [0, 7]
+        assert tasks[1][1] not in [0, 7]
 
 
-def test_food_spawning_1():
-    env = gym.make("Foraging-8x8-2p-3f-v3")
+def test_task_spawning_1():
+    env = gym.make("Foraging-8x8-2p-3f-2d-v3")
 
     for i in range(1000):
         env.reset()
 
-        foods = [np.array(f) for f in zip(*env.field.nonzero())]
-        # we should have 3 foods
-        assert len(foods) == 3
+        tasks = [np.array(f) for f in zip(*env.field.nonzero())]
+        # we should have 3 tasks
+        assert len(tasks) == 3
 
-        # foods must not be within 2 steps of each other
-        assert manhattan_distance(foods[0], foods[1]) > 2
-        assert manhattan_distance(foods[0], foods[2]) > 2
-        assert manhattan_distance(foods[1], foods[2]) > 2
+        # tasks must not be within 2 steps of each other
+        assert manhattan_distance(tasks[0], tasks[1]) > 2
+        assert manhattan_distance(tasks[0], tasks[2]) > 2
+        assert manhattan_distance(tasks[1], tasks[2]) > 2
 
 
 def test_reward_0(simple2p1f):

@@ -56,7 +56,7 @@ _PURPLE = (128, 0, 128)
 _BACKGROUND_COLOR = _WHITE
 _GRID_COLOR = _BLACK
 
-from .environment import FoodDecayType
+from .environment import TaskDynamicType
 
 def get_display(spec):
     """Convert a display specification (such as :0) into an actual Display
@@ -134,7 +134,7 @@ class Viewer(object): # Visualization Renderer Class - responsible for creating 
         self.window.dispatch_events()
 
         self._draw_grid()
-        self._draw_food(env)
+        self._draw_tasks(env)
         self._draw_players(env)
 
         time_step_label = pyglet.text.Label(
@@ -198,15 +198,15 @@ class Viewer(object): # Visualization Renderer Class - responsible for creating 
             )
         batch.draw()
 
-    def _draw_food(self, env):
-        idxes = list(zip(*np.where(np.any(env.field > 0, axis=2))))
+    def _draw_tasks(self, env):
+        tasks = list(env.tasks.values())
         visible_apples = []
         invisible_apples = []
         batch_visible = pyglet.graphics.Batch()
         batch_invisible = pyglet.graphics.Batch()
 
-        # print(env.field)
-        for row, col in idxes:
+        for task in tasks:
+            row, col = task.position
             apple = pyglet.sprite.Sprite(
                     self.img_apple,
                     (self.grid_size + 1) * col,
@@ -214,7 +214,7 @@ class Viewer(object): # Visualization Renderer Class - responsible for creating 
                     batch=None,
                 )
             apple.update(scale=self.grid_size / apple.width)
-            if env.is_food_visible(row, col):
+            if task.is_visible(env.current_step):
                 apple.batch = batch_visible
                 visible_apples.append(apple)
             else:
@@ -225,12 +225,13 @@ class Viewer(object): # Visualization Renderer Class - responsible for creating 
         batch_visible.draw()
         batch_invisible.draw()
 
-        for row, col in idxes:
-            level_str = ",".join(map(str, np.round(env.field[row, col], 1)))
+        for task in tasks:
+            row, col = task.position
+            level_str = ",".join(map(str, np.round(task.level, 1)))
             self._draw_level_badge(row, col, level_str)
-            spawn_time = str(env.food_spawn_time[row, col])
+            spawn_time = str(task.spawn_time)
             self._draw_time_badge(row, col, spawn_time)
-            self._draw_decayType_badge(row, col, env.food_decay_type[row, col])
+            self._draw_dynamicType_badge(row, col, task.dynamic_type)
 
     def _draw_players(self, env):
         players = []
@@ -333,18 +334,22 @@ class Viewer(object): # Visualization Renderer Class - responsible for creating 
         )
         label.draw()
 
-    def _draw_decayType_badge(self, row, col, decayType):
-        if decayType == FoodDecayType.NONE:
-            decayTypeText = 'N'
-        elif decayType == FoodDecayType.LINEAR_DECAY:
-            decayTypeText = 'L'
-        elif decayType == FoodDecayType.EXPONENTIAL_DECAY:
-            decayTypeText = 'E'
-        elif decayType == FoodDecayType.RANDOM_FLUCTUATE:
-            decayTypeText = 'R'
+    def _draw_dynamicType_badge(self, row, col, dynamicType):
+        if dynamicType == TaskDynamicType.NONE:
+            dynamicTypeText = 'N'
+        elif dynamicType == TaskDynamicType.LINEAR_DECAY:
+            dynamicTypeText = 'LD'
+        elif dynamicType == TaskDynamicType.EXPONENTIAL_DECAY:
+            dynamicTypeText = 'ED'
+        elif dynamicType == TaskDynamicType.LINEAR_GROWTH:
+            dynamicTypeText = 'LG'
+        elif dynamicType == TaskDynamicType.EXPONENTIAL_GROWTH:
+            dynamicTypeText = 'EG'
+        elif dynamicType == TaskDynamicType.RANDOM_FLUCTUATE:
+            dynamicTypeText = 'R'
         else:
-            decayTypeText = '?'
-            raise ValueError("Invalid decay type")
+            dynamicTypeText = '?'
+            raise ValueError("Invalid dynamic type")
 
         badge_x = col * (self.grid_size + 1) + (1 / 5) * (self.grid_size + 1)
         badge_y = (
@@ -356,7 +361,7 @@ class Viewer(object): # Visualization Renderer Class - responsible for creating 
         font_size = 10
 
         label = pyglet.text.Label(
-            decayTypeText,
+            dynamicTypeText,
             font_name="Times New Roman",
             font_size=font_size,
             bold=True,

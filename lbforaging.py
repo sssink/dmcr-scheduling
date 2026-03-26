@@ -25,6 +25,7 @@ def _game_loop(env, render):
     if render:
         env.render()
         # time.sleep(0.5)
+        print("OBS", obss)
         print("press 'Enter' to continue.(input 'q' to exit)")
         user_input = input().strip().lower()
         if user_input == 'q':
@@ -34,13 +35,13 @@ def _game_loop(env, render):
         actions = env.action_space.sample()
         # print(obss)
         # actions = [player.controller.step(obs) for player, obs in zip(env.unwrapped.players, obss)]
-
         obss, rewards, done, _, _ = env.step(actions)
         returns += rewards
 
         if render:
             env.render()
             # time.sleep(0.5)
+            print("OBS", obss)
             print("press 'Enter' to continue.(input 'q' to exit)")
             user_input = input().strip().lower()
             if user_input == 'q':
@@ -50,7 +51,7 @@ def _game_loop(env, render):
 
 
 def main(episodes=1, render=False):
-    env = gym.make("Foraging-2s-9x9-3p-2f-2d-v3")
+    env = gym.make("Foraging-2s-9x9-3p-2f-3d-v3")
     for episode in range(episodes):
         _game_loop(env, render)
 

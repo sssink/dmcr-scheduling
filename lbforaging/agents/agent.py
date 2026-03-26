@@ -32,7 +32,7 @@ class BaseAgent:
     def step(self, obs):
         raise NotImplementedError("You must implement an agent")
 
-    def _closest_food(self, obs, max_food_level=None, start=None):
+    def _closest_task(self, obs, max_task_level=None, start=None):
         if start is None:
             x, y = self.observed_position
         else:
@@ -40,8 +40,8 @@ class BaseAgent:
 
         field = np.copy(obs.field)
 
-        if max_food_level:
-            field[field > max_food_level] = 0
+        if max_task_level:
+            field[field > max_task_level] = 0
 
         r, c = np.nonzero(field)
         try:

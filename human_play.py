@@ -4,8 +4,8 @@ Use this script to interactively play LBF
 
 You can control the interaction with the following keys:
 - Arrow keys: move the current agent
-- L: load food
-- K: load food and keep the agent loading
+- L: load task
+- K: load task and keep the agent loading
 - SPACE: do nothing
 - TAB: change the current agent
 - R: reset the environment
@@ -77,8 +77,8 @@ class InteractiveLBFEnv:
 
     def _help(self):
         print("Use the arrow keys to move the current agent")
-        print("Use the L key to load food")
-        print("Use the K key to load food and keep the agent loading")
+        print("Use the L key to load task")
+        print("Use the K key to load task and keep the agent loading")
         print("Use the SPACE key to do nothing")
         print("Press TAB to change the current agent")
         print("Press R to reset the environment")

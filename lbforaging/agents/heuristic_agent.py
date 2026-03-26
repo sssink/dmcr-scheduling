@@ -34,14 +34,14 @@ class HeuristicAgent(BaseAgent):
 
 class H1(HeuristicAgent):
     """
-    H1 agent always goes to the closest food
+    H1 agent always goes to the closest task
     """
 
     name = "H1"
 
     def step(self, obs):
         try:
-            r, c = self._closest_food(obs)
+            r, c = self._closest_task(obs)
         except TypeError:
             return random.choice(obs.actions)
         y, x = self.observed_position
@@ -57,7 +57,7 @@ class H1(HeuristicAgent):
 
 class H2(HeuristicAgent):
     """
-    H2 Agent goes to the one visible food which is closest to the centre of visible players
+    H2 Agent goes to the one visible task which is closest to the centre of visible players
     """
 
     name = "H2"
@@ -66,7 +66,7 @@ class H2(HeuristicAgent):
         players_center = self._center_of_players(obs.players)
 
         try:
-            r, c = self._closest_food(obs, None, players_center)
+            r, c = self._closest_task(obs, None, players_center)
         except TypeError:
             return random.choice(obs.actions)
         y, x = self.observed_position
@@ -82,14 +82,14 @@ class H2(HeuristicAgent):
 
 class H3(HeuristicAgent):
     """
-    H3 Agent always goes to the closest food with compatible level
+    H3 Agent always goes to the closest task with compatible level
     """
 
     name = "H3"
 
     def step(self, obs):
         try:
-            r, c = self._closest_food(obs, self.level)
+            r, c = self._closest_task(obs, self.level)
         except TypeError:
             return random.choice(obs.actions)
         y, x = self.observed_position
@@ -105,8 +105,8 @@ class H3(HeuristicAgent):
 
 class H4(HeuristicAgent):
     """
-    H4 Agent goes to the one visible food which is closest to all visible players
-     such that the sum of their and H4's level is sufficient to load the food
+    H4 Agent goes to the one visible task which is closest to all visible players
+     such that the sum of their and H4's level is sufficient to load the task
     """
 
     name = "H4"
@@ -116,7 +116,7 @@ class H4(HeuristicAgent):
         players_sum_level = sum([a.level for a in obs.players])
 
         try:
-            r, c = self._closest_food(obs, players_sum_level, players_center)
+            r, c = self._closest_task(obs, players_sum_level, players_center)
         except TypeError:
             return random.choice(obs.actions)
         y, x = self.observed_position
