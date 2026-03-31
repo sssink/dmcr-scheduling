@@ -1,5 +1,5 @@
 <p align="center">
- <img width="350px" src="docs/img/logo.png" align="center" alt="Dynamic Multi-dimensional Capability Resource Scheduling (DMCRS)" />
+ <img width="350px" src="docs/img/logo_dmcrs.png" align="center" alt="Dynamic Multi-dimensional Capability Resource Scheduling (DMCRS)" />
  <p align="center">A multi-agent reinforcement learning environment for dynamic resource scheduling</p>
 </p>
 
@@ -33,10 +33,12 @@ This environment is a mixed cooperative-competitive game that simulates a **dyna
 ## Core Concepts
 
 ### Resources
-Resources are entities in the environment that can move and execute tasks. Each resource has a **multi-dimensional capability vector** (formerly a scalar level), representing its abilities across different dimensions. Resources can navigate the environment and attempt to execute tasks placed next to them.
+Resources are entities in the environment that can move and execute tasks. Each resource has a **multi-dimensional capability vector** (formerly a scalar capability), representing its abilities across different dimensions. Resources can navigate the environment and attempt to execute tasks placed next to them.
 
 ### Tasks
 Tasks are randomly scattered in the grid world, each having a **multi-dimensional requirement vector**. A task can be successfully executed only if the sum of the capability vectors of the resources involved meets or exceeds the task's requirement vector in **each dimension**. This creates a collaborative execution mechanism where resources must coordinate to complete tasks that exceed their individual capabilities.
+
+When `force_coop=True`, task generation injects at least one random **bottleneck dimension** per task, and the requirement on that dimension is pushed above the single-resource peak capability while staying within team-achievable range. This guarantees that one resource alone cannot complete those tasks.
 
 ### Dynamic Task Evolution
 The environment supports dynamic changes to task requirements over time, including:
@@ -45,6 +47,10 @@ The environment supports dynamic changes to task requirements over time, includi
 - **Random Fluctuation**: Task requirements fluctuate randomly within a specified range
 
 This feature introduces temporal dynamics, requiring resources to adapt their strategies based on the changing nature of tasks.
+
+To avoid unbounded growth creating impossible tasks, the environment uses a hard capability ceiling for tasks:
+- Task capability ceiling per dimension = **sum of all resources' theoretical max capabilities** + `task_capability_ceiling_slack`
+- Growth-type tasks are clipped to this ceiling during updates
 
 ### Task Visibility
 Tasks have spawn times that determine when they become visible to resources. Tasks that have been spawned but not yet visible are not included in the resource's observations. This adds a planning dimension where resources must consider both current and future task availability.
@@ -103,22 +109,26 @@ from gymnasium.envs.registration import register
 
 register(
     id="dmcrs-{0}x{0}-{1}r-{2}t-{3}d{4}-v3".format(s, r, t, d, "-coop" if c else ""),
-    entry_point="dmcrs.foraging:ForagingEnv",
+    entry_point="dmcrs.scheduling:SchedulingEnv",
     kwargs={
         "resources": r,
-        "min_resource_level": [1] * d,
-        "max_resource_level": [2] * d,
+        "min_resource_capability": [1] * d,
+        "max_resource_capability": [2] * d,
         "field_size": (s, s),
-        "min_task_level": [1] * d,
-        "max_task_level": None,
+        "min_task_capability": [1] * d,
+        "max_task_capability": None,
         "max_num_tasks": t,
         "sight": s,
         "max_episode_steps": 50,
         "force_coop": c,
-        "level_dim": d,
+        "capability_dim": d,
     },
 )
 ```
+
+Registration mode:
+- Default import mode is **minimal registration** for faster startup.
+- Set `DMCRS_REGISTRATION_MODE=full` to enable full combinational registration.
 
 Similarly to Gym, but adapted to multi-agent settings step() function is defined as
 ```python
@@ -133,9 +143,9 @@ Where n-obs, n-rewards, n-done and n-info are LISTS of N items (where N is the n
 
 The observation space consists of the following components:
 
-1. **Task Field**: A grid representation of the environment showing the position and level of tasks that are visible to the resource. 
+1. **Task Field**: A grid representation of the environment showing the position and capability of tasks that are visible to the resource. 
 2. **Resource Positions**: The positions of all resources in the environment. 
-3. **Resource Levels**: The capability vectors of all resources (if `observe_agent_levels` is True).
+3. **Resource Capability**: The capability vectors of all resources (if `observe_agent_capabilities` is True).
 
 With the task spawn time modification, **only tasks that have reached their spawn time (i.e., are visible) are included in the observation space**. Tasks that have been spawned but not yet visible are not included in the resource's observations.
 
@@ -164,26 +174,30 @@ The rewards are calculated as follows. When one or more resources execute a task
 
 For the rewards distribution:
 1. Each resource's contribution is determined by its capability vector components relative to the sum of all participating resources' capability vectors
-2. The reward for each resource is calculated based on this contribution proportion and the task's requirement vector
-3. If enabled, the reward is normalized so that the sum of rewards (if all tasks have been completed) is one
+2. The task reward base depends on the task dynamic type:
+   - **Linear/Exponential Decay**: use the **current** task requirement vector at execution time
+   - **Linear/Exponential Growth**: use an initial-base reward multiplied by a time-decay coefficient based on `(current_step - spawn_time)`
+   - **Random Fluctuation / None**: use the task's static base reward
+3. The resource reward is `task_reward_base * contribution`
+4. If enabled, the reward is normalized so that the sum of rewards (if all tasks have been completed) is one
 
 If you prefer code:
 
 ```python
 for a in adj_resources: # the resources that participated in executing the task
     contribution = 0.0
-    for i in range(self.level_dim):
-        if adj_resource_level[i] > EPSILON:
-            contribution += float(a.level[i] / adj_resource_level[i])
-    contribution = contribution / self.level_dim
+    for i in range(self.capability_dim):
+        if adj_resource_capability[i] > EPSILON:
+            contribution += float(a.capability[i] / adj_resource_capability[i])
+    contribution = contribution / self.capability_dim
     a.reward += task_base_value * contribution
     if self._normalize_reward:
         a.reward = a.reward / max(self._task_base_value_spawned, EPSILON)
 ```
 
-## Feature: Dynamic Task Level Changes
+## Feature: Dynamic Task Capability Changes
 
-The environment supports dynamic changes to task requirements over time. This feature can be enabled by setting `enable_task_dynamic_level=True` when creating the environment. Each task is assigned a random dynamic type at spawn time, which determines how its requirement vector changes over time. The following dynamic types are supported:
+The environment supports dynamic changes to task requirements over time. This feature can be enabled by setting `enable_task_dynamic_capability=True` when creating the environment. Each task is assigned a random dynamic type at spawn time, which determines how its requirement vector changes over time. The following dynamic types are supported:
 
 1. **None (NONE)**: Task requirements remain constant over time.
 2. **Linear Decay (LINEAR_DECAY)**: Task requirements decrease linearly over time based on a decay rate.
@@ -192,11 +206,19 @@ The environment supports dynamic changes to task requirements over time. This fe
 5. **Exponential Growth (EXPONENTIAL_GROWTH)**: Task requirements increase exponentially over time based on a growth factor.
 6. **Random Fluctuation (RANDOM_FLUCTUATE)**: Task requirements fluctuate randomly within a specified range.
 
-Key parameters for configuring task dynamic level changes:
+Key parameters for configuring task dynamic capability changes:
 
 - `task_dynamic_rates`: A list of two values specifying the minimum and maximum rates for linear decay/growth.
 - `task_dynamic_factors`: A list of two values specifying the minimum and maximum factors for exponential decay/growth.
 - `task_fluctuation_range`: A list of two values specifying the minimum and maximum fluctuations for random fluctuation.
+- `growth_reward_base_multiplier`: Multiplier applied to growth-task initial base reward.
+- `growth_reward_time_decay_rate`: Exponential decay rate used on growth-task reward over alive time.
+- `task_generation_coop_ratio`: In each episode, task generation upper bound uses `(sum of spawned resource capabilities) * ratio`.
+- `task_capability_ceiling_slack`: Small additive slack on top of the hard task capability ceiling.
+
+Task generation upper bound in each episode:
+- `upper_per_dim = min((sum of current spawned resource capabilities) * task_generation_coop_ratio, capability_ceiling_per_dim)`
+- This upper bound is then used to sample each task's initial requirement vector.
 
 When a task's requirement in all dimensions drops below a small epsilon value (1e-6), it is removed from the environment.
 
