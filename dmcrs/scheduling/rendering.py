@@ -1,5 +1,5 @@
 """
-2D rendering of Dynamic Multi-Level-based Foraging (DMLBF) domain
+2D rendering of Dynamic Multi-dimensional Capability Resource Scheduling (DMCRS) domain
 """
 
 import math
@@ -227,8 +227,8 @@ class Viewer(object): # Visualization Renderer Class - responsible for creating 
 
         for task in tasks:
             row, col = task.position
-            level_str = ",".join(map(str, np.round(task.level, 1)))
-            self._draw_level_badge(row, col, level_str)
+            capability_str = ",".join(map(str, np.round(task.capability, 1)))
+            self._draw_capability_badge(row, col, capability_str)
             spawn_time = str(task.spawn_time)
             self._draw_time_badge(row, col, spawn_time)
             self._draw_dynamicType_badge(row, col, task.dynamic_type)
@@ -251,12 +251,12 @@ class Viewer(object): # Visualization Renderer Class - responsible for creating 
             r.update(scale=self.grid_size / r.width)
         batch.draw()
         for r in env.resources:
-            level_str = ",".join(map(str, np.round(r.level, 1)))
-            self._draw_level_badge(*r.position, level_str)
+            capability_str = ",".join(map(str, np.round(r.capability, 1)))
+            self._draw_capability_badge(*r.position, capability_str)
 
-    def _draw_level_badge(self, row, col, level): # draw level badge
+    def _draw_capability_badge(self, row, col, capability): # draw capability badge
         resolution = 4
-        text_length = len(str(level))
+        text_length = len(str(capability))
         font_size = 10 if text_length > 3 else 12
         char_width = font_size * 0.5
         rect_width = char_width * text_length * 1.3
@@ -283,7 +283,7 @@ class Viewer(object): # Visualization Renderer Class - responsible for creating 
         rect.draw(GL_LINE_LOOP)
 
         label = pyglet.text.Label(
-            str(level),
+            str(capability),
             font_name="Times New Roman",
             font_size=font_size,
             bold=True,

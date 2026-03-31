@@ -82,14 +82,14 @@ class H2(HeuristicAgent):
 
 class H3(HeuristicAgent):
     """
-    H3 Agent always goes to the closest task with compatible level
+    H3 Agent always goes to the closest task with compatible capability
     """
 
     name = "H3"
 
     def step(self, obs):
         try:
-            r, c = self._closest_task(obs, self.level)
+            r, c = self._closest_task(obs, self.capability)
         except TypeError:
             return random.choice(obs.actions)
         y, x = self.observed_position
@@ -106,17 +106,17 @@ class H3(HeuristicAgent):
 class H4(HeuristicAgent):
     """
     H4 Agent goes to the one visible task which is closest to all visible resources
-     such that the sum of their and H4's level is sufficient to load the task
+     such that the sum of their and H4's capability is sufficient to load the task
     """
 
     name = "H4"
 
     def step(self, obs):
         resources_center = self._center_of_resources(obs.resources)
-        resources_sum_level = sum([a.level for a in obs.resources])
+        resources_sum_capability = sum([a.capability for a in obs.resources])
 
         try:
-            r, c = self._closest_task(obs, resources_sum_level, resources_center)
+            r, c = self._closest_task(obs, resources_sum_capability, resources_center)
         except TypeError:
             return random.choice(obs.actions)
         y, x = self.observed_position

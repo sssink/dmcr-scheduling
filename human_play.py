@@ -88,9 +88,9 @@ class InteractiveDMCRSEnv:
         print()
 
     def _get_current_agent_info(self):
-        agent_level = self.env.unwrapped.resources[self.current_agent_index].level
+        agent_capability = self.env.unwrapped.resources[self.current_agent_index].capability
         x, y = self.env.unwrapped.resources[self.current_agent_index].position
-        return f"Resource {self.current_agent_index + 1} (Level {agent_level}, at row {x + 1}, col {y + 1})"
+        return f"Resource {self.current_agent_index + 1} (Capability {agent_capability}, at row {x + 1}, col {y + 1})"
 
     def _display_info(self, obss, rews, done):
         print(f"Step {self.t}:")

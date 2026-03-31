@@ -51,7 +51,7 @@ def _game_loop(env, render):
 
 
 def main(episodes=1, render=False):
-    env = gym.make("dmcrs-2s-9x9-3r-2t-3d-v3")
+    env = gym.make("dmcrs-2s-9x9-3r-2t-3d-coop-v3")
     for episode in range(episodes):
         _game_loop(env, render)
 
