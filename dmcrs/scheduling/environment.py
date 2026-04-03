@@ -165,19 +165,19 @@ class SchedulingEnv(gym.Env):
         force_coop, # whether to force cooperation
         capability_dim, # dimension of the capability
         task_spawn_min_time=0, # minimum time between task spawns
-        task_spawn_max_time=15, # maximum time between task spawns
+        task_spawn_max_time=10, # maximum time between task spawns
         normalize_reward=True,
         grid_observation=False,
         observe_agent_capabilities=True,
         penalty=0.0,
         render_mode=None,
         enable_task_dynamic_capability=True,
-        task_dynamic_rates=[0.04, 0.1], # can be adjusted
-        task_dynamic_factors=[0.8, 0.95],
-        task_fluctuation_range=[-0.2, 0.2],
+        task_dynamic_rates=[0.02, 0.05], # [0.04, 0.1]
+        task_dynamic_factors=[0.9, 0.95], # [0.8, 0.95]
+        task_fluctuation_range=[-0.1, 0.1], # [-0.2, 0.2]
         growth_reward_base_multiplier=1.05,
         growth_reward_time_decay_rate=0.03,
-        task_generation_coop_ratio=1.0,
+        task_generation_coop_ratio=0.8, # 1.0
         task_capability_ceiling_slack=0.5,
     ):
         self.logger = logging.getLogger(__name__)
@@ -315,7 +315,7 @@ class SchedulingEnv(gym.Env):
         capability_dim = self.capability_dim
 
         max_resource_capability_per_dim = self.max_resource_capability.max(axis=0)
-        print(self.max_task_capability)
+
         max_task_capability_per_dim = (
             self.max_task_capability.max(axis=0)
             if self.max_task_capability is not None
@@ -987,10 +987,10 @@ class SchedulingEnv(gym.Env):
         self._gen_valid_moves()
 
         nobs = self._make_gym_obs()
-        for r in self.resources:
-            print(r.position)
-        for t in self.tasks.values():
-            print(t.position, t.capability, t.base_value)
+        # for r in self.resources:
+        #     print(r.position)
+        # for t in self.tasks.values():
+        #     print(t.position, t.capability, t.base_value)
         return nobs, self._get_info()
 
     def step(self, actions):
@@ -1092,11 +1092,11 @@ class SchedulingEnv(gym.Env):
         for r in self.resources:
             r.score += r.reward
 
-        for r in self.resources:
-            print(r.position)
+        # for r in self.resources:
+        #     print(r.position)
         
-        for t in self.tasks.values():
-            print(t.position, t.capability, t.base_value)
+        # for t in self.tasks.values():
+        #     print(t.position, t.capability, t.base_value)
             
 
         rewards = [r.reward for r in self.resources]

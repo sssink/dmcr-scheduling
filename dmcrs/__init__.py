@@ -16,6 +16,7 @@ pens = [False]  # [True, False]
 capability_dim = [2, 3]
 
 minimal_env_specs = [
+    (8, 3, 2, None, False, False, 2, False, 2),
     (8, 3, 2, None, False, True, 2, False, 2),
     (8, 3, 2, None, False, True, 2, False, 3),
     (8, 3, 2, None, True, True, 2, False, 2),

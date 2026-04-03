@@ -52,6 +52,7 @@ _BLUE = (0, 0, 255)
 _YELLOW = (255, 255, 0)
 _ORANGE = (255, 165, 0)
 _PURPLE = (128, 0, 128)
+_LIGHT_BLUE = (173, 216, 230)
 
 _BACKGROUND_COLOR = _WHITE
 _GRID_COLOR = _BLACK
@@ -134,6 +135,7 @@ class Viewer(object): # Visualization Renderer Class - responsible for creating 
         self.window.dispatch_events()
 
         self._draw_grid()
+        self._draw_resource_sight_overlay(env)
         self._draw_tasks(env)
         self._draw_resources(env)
 
@@ -195,6 +197,40 @@ class Viewer(object): # Visualization Renderer Class - responsible for creating 
                     ),
                 ),
                 ("c3B", (*_BLACK, *_BLACK)),
+            )
+        batch.draw()
+
+    def _draw_resource_sight_overlay(self, env):
+        sight_cells = {}
+        for resource in env.resources:
+            row, col = resource.position
+            row_start = max(0, row - env.sight)
+            row_end = min(self.rows - 1, row + env.sight)
+            col_start = max(0, col - env.sight)
+            col_end = min(self.cols - 1, col + env.sight)
+            for r in range(row_start, row_end + 1):
+                for c in range(col_start, col_end + 1):
+                    sight_cells[(r, c)] = sight_cells.get((r, c), 0) + 1
+
+        if not sight_cells:
+            return
+
+        base_alpha = 30
+        alpha_step = 30
+        max_alpha = 150
+        batch = pyglet.graphics.Batch()
+        for (row, col), overlap_count in sight_cells.items():
+            alpha = min(max_alpha, base_alpha + alpha_step * (overlap_count - 1))
+            x0 = (self.grid_size + 1) * col + 1
+            y0 = self.height - (self.grid_size + 1) * (row + 1) + 1
+            x1 = x0 + self.grid_size - 1
+            y1 = y0 + self.grid_size - 1
+            batch.add(
+                4,
+                GL_QUADS,
+                None,
+                ("v2f", (x0, y0, x1, y0, x1, y1, x0, y1)),
+                ("c4B", (*_LIGHT_BLUE, alpha, *_LIGHT_BLUE, alpha, *_LIGHT_BLUE, alpha, *_LIGHT_BLUE, alpha)),
             )
         batch.draw()
 
